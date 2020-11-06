@@ -1,0 +1,279 @@
+import mysql.connector
+from tkinter import *
+from tkinter import ttk, messagebox
+
+
+def tbles():
+    con = mysql.connector.connect(host="localhost", user="root",
+                                  passwd="Sdcard907@", database="ayu")
+
+    i = "create table if not exists email_i(name varchar(30), email varchar(30), contact varchar(10),gender varchar(10),dept varchar(30), des varchar(30),PRIMARY KEY(email))"
+    cur = con.cursor()
+    cur.execute(i)
+    t = "create table if not exists user_id(name varchar(20),email varchar(30), FOREIGN KEY(email) REFERENCES email_i(email))"
+    cur.execute(t)
+    con.close()
+    print("Created")
+
+
+tbles()
+
+
+def newuserlogin():
+    con = mysql.connector.connect(host="localhost", user="root",
+                                  passwd="Sdcard907@", database="ayu")
+    queryn = "insert into users_i(name,email) values('{}','{}')".format(name_vr.get(), email_vr.get())
+    print(queryn)
+    cur = con.cursor()
+    cur.execute(queryn)
+    con.commit()
+
+    print("New user has been Registered")
+
+
+graph = {'BH1': ['BH2', 'BH5', 'BH3'],
+         'BH2': ['BH1', 'BH4', 'BH5'],
+         'BH3': ['BH1', 'GH1', 'GH2'],
+         'BH4': ['BH2', 'BH5'],
+         'BH5': ['BH1', 'BH2', 'BH4'],
+         'GH1': ['BH3'],
+         'GH2': ['BH3']}
+
+
+def insert_user():
+    if email_vr.get() == "" or gender_vr.get() == "" or contact_vr.get() == "" or name_vr.get() == "" or txt_dest_vr.get() == "" or txt_dept_vr.get() == "":
+        messagebox.showerror("All details arent filled", parent=root)
+    else:
+        global query
+        con = mysql.connector.connect(host="localhost", user="root",
+                                      passwd="Sdcard907@", database="ayu")
+        query = "insert into email_i(name,email,contact,gender,dept,des) " \
+                "values('{}','{}','{}','{}','{}','{}')".format(
+            name_vr.get(), email_vr.get(), contact_vr.get(), gender_vr.get(),
+            txt_dept_vr.get(), txt_dest_vr.get())
+        print(query)
+        start = txt_dept_vr.get()
+        goal = txt_dest_vr.get()
+        explored = []
+
+        # Queue for traversing the
+        # graph in the BFS
+        queue = [[start]]
+        f=1
+        # If the desired node is
+        # reached
+        if start == goal:
+            print("Departure loc and dest loc are same ")
+            f=0
+            return
+        # Loop to traverse the graph
+        # with the help of the queue
+        while queue:
+            path = queue.pop(0)
+            node = path[-1]
+
+            # Codition to check if the
+            # current node is not visited
+            if node not in explored:
+                neighbours = graph[node]
+
+                # Loop to iterate over the
+                # neighbours of the node
+                for neighbour in neighbours:
+                    new_path = list(path)
+                    new_path.append(neighbour)
+                    queue.append(new_path)
+
+                    # Condition to check if the
+                    # neighbour node is the goal
+                    if neighbour == goal:
+                        print("Shortest Path followed = ", *new_path)
+                        x=0
+                        for t in new_path:
+                            x=x+1
+                        tmp.config(text="Hello " +  name_vr.get())
+                        tst.config(text="Travelling Path :"+'{}'.format(new_path))
+                        trt.config(text="Your travelling cost will be:{}".format(x*10))
+                        f=0
+                        return
+                explored.append(node)
+
+        # Condition when the nodes
+        # are not connected
+        if f==1:
+            print("So sorry, but a connecting" \
+              "path doesn't exist :(")
+        cur = con.cursor()
+        cur.execute(query)
+        con.commit()
+
+
+        query = "select * from email_i"
+        cur = con.cursor()
+        cur.execute(query)
+        rows = cur.fetchall()
+        for row in rows:
+            Student_table.insert('', END, values=row)
+            con.commit()
+        con.close()
+
+        print("user destination saved to db")
+
+
+
+
+
+def cancel():
+    global query
+    con = mysql.connector.connect(host="localhost", user="root",
+                                  passwd="Sdcard907@", database="ayu")
+    query = "delete from user where email='{}'".format(email_vr.get())
+    print(query)
+    cur = con.cursor()
+    cur.execute(query)
+    print("deleted")
+
+
+root = Tk()
+root.title("heloo")
+root.geometry("1570x900+0+0")
+
+title = Label(root, text="CAB Booking System", bd=10, relief=GROOVE, font=("Helvetica", 40, "bold"),
+              bg="#41F5D1", fg="#4FF51E")
+title.pack(fill='x')
+# =======Variables================================
+user_vr = StringVar()
+name_vr = StringVar()
+email_vr = StringVar()
+gender_vr = StringVar()
+contact_vr = StringVar()
+txt_dept_vr = StringVar()
+txt_dest_vr = StringVar()
+x=0
+# ============MAngae FRame=======================
+Manage_frame = Frame(root, bd=4, relief=RIDGE, bg="crimson")
+Manage_frame.place(x=10, y=100, width=480, height=650)
+# ===========DEtail FRame========================
+Detail_frame = Frame(root, bd=4, relief=RIDGE, bg="crimson")
+Detail_frame.place(x=540, y=100, width=800, height=650)
+# =====================================================================
+m_title = Label(Manage_frame, text="PASSENGER DETAILS",
+                bd=10, bg="crimson", fg="white", font=("Helvetica", 20, "bold"))
+m_title.grid(row=0, columnspan=2, pady=20)
+# ======================================================================
+lbl_roll = Label(Manage_frame, text="Name",
+                 bd=10, bg="crimson", fg="white", font=("Helvetica", 20, "bold"))
+lbl_roll.grid(row=1, column=0, pady=10, padx=20, sticky="w")
+
+txt_Roll = Entry(Manage_frame, textvariable=name_vr, font=("Helvetica", 14), bd=5, relief=GROOVE)
+txt_Roll.grid(row=1, column=1, pady=10, padx=20, sticky="w")
+# ========================================================================
+lbl_Email = Label(Manage_frame, text="Email ID",
+                  bd=10, bg="crimson", fg="white", font=("Helvetica", 20, "bold"))
+lbl_Email.grid(row=2, column=0, pady=10, padx=20, sticky="w")
+
+txt_Email = Entry(Manage_frame, textvariable=email_vr, font=("Helvetica", 14), bd=5, relief=GROOVE)
+txt_Email.grid(row=2, column=1, pady=10, padx=20, sticky="w")
+# =======================================================================
+lbl_Gender = Label(Manage_frame, text="Gender",
+                   bd=10, bg="crimson", fg="white", font=("Helvetica", 20, "bold"))
+lbl_Gender.grid(row=3, column=0, pady=10, padx=20, sticky="w")
+
+combo_gender = ttk.Combobox(Manage_frame, textvariable=gender_vr, font=("Helvetica", 14, "bold"),
+                            state='readonly')
+combo_gender['value'] = ("Male", "Female")
+combo_gender.grid(row=3, column=1, padx=20, pady=10)
+
+# =======================================================================
+lbl_Contact = Label(Manage_frame, text="Contact",
+                    bd=10, bg="crimson", fg="white", font=("Helvetica", 20, "bold"))
+lbl_Contact.grid(row=4, column=0, pady=10, padx=20, sticky="w")
+
+txt_Contact = Entry(Manage_frame, textvariable=contact_vr, font=("Helvetica", 14), bd=5, relief=GROOVE)
+txt_Contact.grid(row=4, column=1, pady=10, padx=20, sticky="w")
+# =======================================================================
+lbl_Departure = Label(Manage_frame, text="Departure",
+                      bd=10, bg="crimson", fg="white", font=
+                      ("Helvetica", 20, "bold"))
+lbl_Departure.grid(row=5, column=0, pady=10, padx=20, sticky="w")
+
+txt_Departure = Entry(Manage_frame, textvariable=txt_dept_vr, font=("Helvetica", 14), bd=5, relief=GROOVE)
+txt_Departure.grid(row=5, column=1, pady=10, padx=20, sticky="w")
+# =======================================================================
+lbl_Destination = Label(Manage_frame, text="Destination",
+                        bd=10, bg="crimson", fg="white", font=
+                        ("Helvetica", 20, "bold"))
+lbl_Destination.grid(row=6, column=0, pady=10, padx=20, sticky="w")
+
+txt_Destination = Entry(Manage_frame, textvariable=txt_dest_vr, font=("Helvetica", 14), bd=5, relief=GROOVE)
+txt_Destination.grid(row=6, column=1, pady=10, padx=20, sticky="w")
+# =======================================================================
+btn_frame = Frame(Manage_frame, bd=4, relief=RIDGE, bg="green")
+btn_frame.place(x=25, y=570, width=430, height=60)
+Addbtn = Button(btn_frame, text="SUBMIT", command=insert_user, width=10)
+Addbtn.place(x=75, y=10)
+cancelbtn = Button(btn_frame, text="CANCEL", command=cancel, width=10)
+cancelbtn.place(x=250, y=10)
+# =======================================================================
+
+lbl_Search = Label(Detail_frame, text="Search By",
+                   bd=10, bg="crimson", fg="white", font=
+                   ("Helvetica", 20, "bold"))
+lbl_Search.grid(row=0, column=0, pady=10, padx=20, sticky="w")
+# =====================================================================
+combo_search = ttk.Combobox(Detail_frame, width=10, font=("Helvetica", 14, "bold"),
+                            state='readonly')
+combo_search['value'] = ("Roll No", "Name", "Contact")
+combo_search.grid(row=0, column=1, padx=20, pady=10)
+# =====================================================================
+
+# =====================================================================
+seacrhbtn = Button(Detail_frame, text="SEARCH", width=10, pady=5).grid(row=0,
+                                                                       column=3, padx=10, pady=5)
+showbtn = Button(Detail_frame, text="SHOW", width=10, pady=5).grid(row=0, column=4,
+                                                                   padx=10, pady=10)
+
+# ====================================================================
+Table_frame = Frame(Detail_frame, bd=4, relief=RIDGE, bg="crimson")
+Table_frame.place(x=10, y=70, width=760, height=450)
+#====================================================================
+scroll_x = Scrollbar(Table_frame, orient=HORIZONTAL)
+scroll_y = Scrollbar(Table_frame, orient=VERTICAL)
+
+# =============================================================
+Student_table = ttk.Treeview(Table_frame, columns=("name"
+                                                   , "email", "Contact", "Gender", "Dept", "Dest"),
+                             xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
+scroll_x.pack(side=BOTTOM, fill=X)
+scroll_y.pack(side=RIGHT, fill=Y)
+scroll_x.config(command=Student_table.xview)
+scroll_y.config(command=Student_table.yview)
+# ==================================================================
+lbl =LabelFrame(root,text="Travelling Details",font=("Helvetica",18),bd=4, relief=RIDGE, fg="crimson")
+lbl.place(x=540,y=640,width=800,height=90)
+trt=Label(lbl)
+tmp=Label(lbl)
+tst=Label(lbl)
+trt.place(x=10,y=30)
+tmp.place(x=10,y=10)
+tst.place(x=200,y=30)
+
+
+#===================================================================
+Student_table.heading("name", text="Name")
+Student_table.heading("email", text="Email ID")
+Student_table.heading("Contact", text="Contact")
+Student_table.heading("Gender", text="Gender")
+Student_table.heading("Dept", text="Departure")
+Student_table.heading("Dest", text="Destination")
+# ==================================================================
+Student_table.column("name", width=200)
+Student_table.column("email", width=200)
+Student_table.column("Contact", width=200)
+Student_table.column("Gender", width=200)
+Student_table.column("Dept", width=200)
+Student_table.column("Dest", width=200)
+Student_table['show'] = 'headings'
+Student_table.pack(fill=BOTH, expand=True)
+
+root.mainloop()
